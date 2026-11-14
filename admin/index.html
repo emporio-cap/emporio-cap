@@ -1,0 +1,315 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EMPORIO CAP | Administración</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--gold:#d9a52e;--black:#090909;--panel:#171717;--white:#f5f2eb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--black);color:var(--white);font-family:Arial,sans-serif}
+header{padding:22px;background:#111;border-bottom:1px solid var(--gold);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-family:Georgia,serif;font-size:25px;color:var(--gold);font-weight:bold}
+.brand small{display:block;color:white;font:10px Arial;letter-spacing:4px;margin-top:5px}
+main{max-width:1050px;margin:auto;padding:20px}
+h2{color:var(--gold)}
+button{background:linear-gradient(135deg,#f7d77d,#b77b13);border:0;border-radius:7px;padding:12px 17px;font-weight:bold;cursor:pointer;color:#111}
+button.secondary{background:#292929;color:white;border:1px solid #555}
+button.danger{background:#7c2525;color:white}
+input,textarea{width:100%;padding:13px;margin:7px 0 15px;background:#222;color:white;border:1px solid #555;border-radius:7px;font-size:15px}
+label{color:#ddd;font-size:14px}
+.card{background:var(--panel);border:1px solid #70531e;border-radius:12px;padding:17px;margin:15px 0}
+#login{max-width:420px;margin:70px auto}
+#app{display:none}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}
+nav button{flex:1;min-width:105px}
+nav button.active{background:#fff;color:#111}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:13px}
+.stat{font-size:28px;color:var(--gold);font-weight:bold}
+.product{display:flex;gap:13px;align-items:center;flex-wrap:wrap}
+.product img{width:90px;height:90px;object-fit:cover;border-radius:8px;background:#333}
+.product-info{flex:1;min-width:130px}
+.muted{color:#aaa;font-size:13px}
+.row{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+.hidden{display:none!important}
+.actions{display:flex;gap:7px;flex-wrap:wrap}
+h3{margin-top:0}
+</style>
+</head>
+<body>
+
+<header>
+<div class="brand">♛ EC | EMPORIO CAP
+<small>GORRAS EXCLUSIVAS</small></div>
+<div class="muted">PANEL ADMINISTRATIVO</div>
+</header>
+
+<main>
+<section id="login" class="card">
+<h2>Acceso privado</h2>
+<p class="muted">Ingresá con tu usuario administrador.</p>
+<label>Correo electrónico</label>
+<input id="email" type="email" placeholder="Tu correo">
+<label>Contraseña</label>
+<input id="password" type="password" placeholder="Tu contraseña">
+<button onclick="login()" style="width:100%">INGRESAR</button>
+<p id="loginMsg" class="muted"></p>
+</section>
+
+<section id="app">
+<div class="row">
+<div>
+<h2>Bienvenido a EMPORIO CAP</h2>
+<div class="muted" id="userEmail"></div>
+</div>
+<button class="secondary" onclick="logout()">Cerrar sesión</button>
+</div>
+
+<nav>
+<button class="active" onclick="showTab('inicio',this)">Inicio</button>
+<button onclick="showTab('productos',this)">Productos</button>
+<button onclick="showTab('clientes',this)">Clientes</button>
+<button onclick="showTab('pedidos',this)">Pedidos</button>
+</nav>
+
+<section id="inicio" class="tab">
+<h2>Resumen de la tienda</h2>
+<div class="grid">
+<div class="card"><div class="muted">Productos</div><div class="stat" id="statProducts">0</div></div>
+<div class="card"><div class="muted">Clientes</div><div class="stat" id="statClients">0</div></div>
+<div class="card"><div class="muted">Pedidos</div><div class="stat" id="statOrders">0</div></div>
+</div>
+<div class="card">
+<h3>Tu tienda exclusiva</h3>
+<p>Administrá tus gorras, precios, fotografías, clientes y pedidos desde un solo lugar.</p>
+</div>
+</section>
+
+<section id="productos" class="tab hidden">
+<div class="row">
+<h2>Catálogo de productos</h2>
+<button onclick="newProduct()">+ Agregar gorra</button>
+</div>
+
+<div id="productForm" class="card hidden">
+<h3 id="formTitle">Nueva gorra</h3>
+<label>Nombre del producto</label>
+<input id="pName" placeholder="Ej. Gorra Urban Premium">
+<label>Precio</label>
+<input id="pPrice" type="number" min="0" placeholder="50000">
+<label>Stock disponible</label>
+<input id="pStock" type="number" min="0" value="1">
+<label>Dirección de la fotografía (URL)</label>
+<input id="pImage" type="url" placeholder="https://...">
+<label>Descripción</label>
+<textarea id="pDescription" rows="3" placeholder="Descripción de la gorra"></textarea>
+<label><input id="pActive" type="checkbox" checked style="width:auto"> Producto activo</label>
+<div class="actions">
+<button onclick="saveProduct()">Guardar producto</button>
+<button class="secondary" onclick="cancelProduct()">Cancelar</button>
+</div>
+<p id="formMsg" class="muted"></p>
+</div>
+
+<div id="productList"></div>
+</section>
+
+<section id="clientes" class="tab hidden">
+<h2>Clientes registrados</h2>
+<div id="clientList"></div>
+</section>
+
+<section id="pedidos" class="tab hidden">
+<h2>Pedidos recibidos</h2>
+<div id="orderList"></div>
+</section>
+</section>
+</main>
+
+<script>
+const SUPABASE_URL='https://abnmvfftqwygoelcnkqj.supabase.co';
+const SUPABASE_KEY='sb_publishable_qpsVqO6AlUNYElzwEEXU5Q_HaSoZUc3';
+const ADMIN_ID='02a35715-7ae2-4b78-a2e1-f4a991538baf';
+
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let editingId=null;
+let products=[];
+let clients=[];
+let orders=[];
+
+function safe(value){
+ return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function login(){
+ const email=document.getElementById('email').value.trim();
+ const password=document.getElementById('password').value;
+ const msg=document.getElementById('loginMsg');
+ msg.textContent='Verificando acceso...';
+
+ const {data,error}=await db.auth.signInWithPassword({email,password});
+ if(error){msg.textContent='No se pudo ingresar: '+error.message;return;}
+ if(data.user.id!==ADMIN_ID){
+  await db.auth.signOut();
+  msg.textContent='Esta cuenta no tiene permiso de administrador.';
+  return;
+ }
+ await startApp(data.user);
+}
+
+async function logout(){
+ await db.auth.signOut();
+ location.reload();
+}
+
+async function startApp(user){
+ if(user.id!==ADMIN_ID){
+  await db.auth.signOut();
+  return;
+ }
+ document.getElementById('login').style.display='none';
+ document.getElementById('app').style.display='block';
+ document.getElementById('userEmail').textContent=user.email;
+ await loadAll();
+}
+
+async function checkSession(){
+ const {data}=await db.auth.getSession();
+ if(data.session) await startApp(data.session.user);
+}
+checkSession();
+
+function showTab(id,button){
+ document.querySelectorAll('.tab').forEach(x=>x.classList.add('hidden'));
+ document.getElementById(id).classList.remove('hidden');
+ document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+ button.classList.add('active');
+}
+
+async function loadAll(){
+ await Promise.all([loadProducts(),loadClients(),loadOrders()]);
+ document.getElementById('statProducts').textContent=products.length;
+ document.getElementById('statClients').textContent=clients.length;
+ document.getElementById('statOrders').textContent=orders.length;
+}
+
+async function loadProducts(){
+ const {data,error}=await db.from('productos').select('*').order('created_at',{ascending:false});
+ if(error){document.getElementById('productList').textContent=error.message;return;}
+ products=data||[];
+ document.getElementById('productList').innerHTML=products.map(p=>`
+ <div class="card product">
+ <img src="${safe(p.imagen_url||'')}" onerror="this.style.display='none'" alt="">
+ <div class="product-info">
+ <strong>${safe(p.nombre)}</strong>
+ <div style="color:var(--gold)">$${Number(p.precio||0).toLocaleString('es-AR')}</div>
+ <div class="muted">Stock: ${safe(p.stock)} · ${p.activo?'Activo':'Inactivo'}</div>
+ </div>
+ <div class="actions">
+ <button onclick="editProduct('${p.id}')">Editar</button>
+ <button class="danger" onclick="deleteProduct('${p.id}')">Eliminar</button>
+ </div>
+ </div>`).join('')||'<p class="muted">Todavía no hay productos cargados.</p>';
+}
+
+function newProduct(){
+ editingId=null;
+ document.getElementById('formTitle').textContent='Nueva gorra';
+ ['pName','pPrice','pImage','pDescription'].forEach(id=>document.getElementById(id).value='');
+ document.getElementById('pStock').value=1;
+ document.getElementById('pActive').checked=true;
+ document.getElementById('formMsg').textContent='';
+ document.getElementById('productForm').classList.remove('hidden');
+}
+
+function editProduct(id){
+ const p=products.find(x=>x.id===id);
+ if(!p)return;
+ editingId=id;
+ document.getElementById('formTitle').textContent='Editar gorra';
+ document.getElementById('pName').value=p.nombre||'';
+ document.getElementById('pPrice').value=p.precio||0;
+ document.getElementById('pStock').value=p.stock||0;
+ document.getElementById('pImage').value=p.imagen_url||'';
+ document.getElementById('pDescription').value=p.descripcion||'';
+ document.getElementById('pActive').checked=!!p.activo;
+ document.getElementById('formMsg').textContent='';
+ document.getElementById('productForm').classList.remove('hidden');
+}
+
+function cancelProduct(){
+ document.getElementById('productForm').classList.add('hidden');
+ editingId=null;
+}
+
+async function saveProduct(){
+ const nombre=document.getElementById('pName').value.trim();
+ const precio=Number(document.getElementById('pPrice').value);
+ const stock=Number(document.getElementById('pStock').value);
+ const msg=document.getElementById('formMsg');
+
+ if(!nombre||!Number.isFinite(precio)||precio<0||!Number.isInteger(stock)||stock<0){
+  msg.textContent='Revisá el nombre, el precio y el stock.';
+  return;
+ }
+
+ const product={
+  nombre,precio,stock,
+  imagen_url:document.getElementById('pImage').value.trim()||null,
+  descripcion:document.getElementById('pDescription').value.trim(),
+  activo:document.getElementById('pActive').checked
+ };
+
+ msg.textContent='Guardando...';
+ const result=editingId
+  ? await db.from('productos').update(product).eq('id',editingId)
+  : await db.from('productos').insert(product);
+
+ if(result.error){msg.textContent='Error: '+result.error.message;return;}
+ cancelProduct();
+ await loadProducts();
+ document.getElementById('statProducts').textContent=products.length;
+}
+
+async function deleteProduct(id){
+ if(!confirm('¿Querés eliminar este producto?'))return;
+ const {error}=await db.from('productos').delete().eq('id',id);
+ if(error){alert('No se pudo eliminar: '+error.message);return;}
+ await loadProducts();
+ document.getElementById('statProducts').textContent=products.length;
+}
+
+async function loadClients(){
+ const {data,error}=await db.from('clientes').select('*').order('created_at',{ascending:false});
+ const el=document.getElementById('clientList');
+ if(error){el.textContent=error.message;return;}
+ clients=data||[];
+ el.innerHTML=clients.map(c=>`
+ <div class="card">
+ <strong>${safe(c.nombre)}</strong>
+ <p class="muted">Teléfono: ${safe(c.telefono)}</p>
+ <p class="muted">Email: ${safe(c.email)}</p>
+ <p class="muted">Dirección: ${safe(c.direccion)} · CP: ${safe(c.codigo_postal)}</p>
+ </div>`).join('')||'<p class="muted">Todavía no hay clientes.</p>';
+}
+
+async function loadOrders(){
+ const {data,error}=await db.from('pedidos').select('*').order('created_at',{ascending:false});
+ const el=document.getElementById('orderList');
+ if(error){el.textContent=error.message;return;}
+ orders=data||[];
+ el.innerHTML=orders.map(o=>`
+ <div class="card">
+ <strong>Pedido #${safe(o.id)}</strong>
+ <p>Total: <span style="color:var(--gold)">$${Number(o.total||0).toLocaleString('es-AR')}</span></p>
+ <p class="muted">Estado: ${safe(o.estado)} · Pago: ${safe(o.estado_pago)}</p>
+ <p class="muted">Método: ${safe(o.metodo_pago)}</p>
+ <p class="muted">Envío: ${safe(o.direccion_envio)} · CP: ${safe(o.codigo_postal)}</p>
+ <p class="muted">${safe(o.created_at)}</p>
+ </div>`).join('')||'<p class="muted">Todavía no hay pedidos.</p>';
+}
+</script>
+</body>
+</html>
