@@ -98,7 +98,14 @@ h3{margin-top:0}
 <label>Nombre del producto</label>
 <input id="pName" placeholder="Ej. Gorra Urban Premium">
 <label>Precio</label>
-<input id="pPrice" type="number" min="0" placeholder="50000">
+<input id="pPrice" type="number" min="0" placeholder="50000"><label>Descuento general (%)</label>
+<label>Descuento general (%)</label><input id="pDiscount" type="number" min="0" max="100" step="0.01" value="0" placeholder="Ej. 15">
+
+<label>Precio de transferencia</label>
+<input id="pTransferPrice" type="number" min="0" placeholder="Ej. 45000">
+
+<label>Descuento por transferencia (%)</label>
+<input id="pTransferDiscount" type="number" min="0" max="100" step="0.01" value="0" placeholder="Ej. 10">
 <label>Stock disponible</label>
 <input id="pStock" type="number" min="0" value="1">
 <label>Dirección de la fotografía (URL)</label>
@@ -217,7 +224,7 @@ async function loadProducts(){
 function newProduct(){
  editingId=null;
  document.getElementById('formTitle').textContent='Nueva gorra';
- ['pName','pPrice','pImage','pDescription'].forEach(id=>document.getElementById(id).value='');
+ ['pName','pPrice','pImage','pDescription','pDiscount','pTransferPrice','pTransferDiscount'].forEach(id=>document.getElementById(id).value=''); 
  document.getElementById('pStock').value=1;
  document.getElementById('pActive').checked=true;
  document.getElementById('formMsg').textContent='';
@@ -231,6 +238,9 @@ function editProduct(id){
  document.getElementById('formTitle').textContent='Editar gorra';
  document.getElementById('pName').value=p.nombre||'';
  document.getElementById('pPrice').value=p.precio||0;
+ document.getElementById('pDiscount').value=p.descuento_porcentaje||0;
+document.getElementById('pTransferPrice').value=p.precio_transferencia||'';
+document.getElementById('pTransferDiscount').value=p.descuento_transferencia_porcentaje||0;
  document.getElementById('pStock').value=p.stock||0;
  document.getElementById('pImage').value=p.imagen_url||'';
  document.getElementById('pDescription').value=p.descripcion||'';
@@ -248,15 +258,19 @@ async function saveProduct(){
  const nombre=document.getElementById('pName').value.trim();
  const precio=Number(document.getElementById('pPrice').value);
  const stock=Number(document.getElementById('pStock').value);
+ const descuento_porcentaje=Number(document.getElementById('pDiscount').value||0);
+const precio_transferencia=document.getElementById('pTransferPrice').value.trim()===''?null:Number(document.getElementById('pTransferPrice').value);
+const descuento_transferencia_porcentaje=Number(document.getElementById('pTransferDiscount').value||0);
  const msg=document.getElementById('formMsg');
 
- if(!nombre||!Number.isFinite(precio)||precio<0||!Number.isInteger(stock)||stock<0){
+if(!nombre||!Number.isFinite(precio)||precio<0||!Number.isInteger(stock)||stock<0||!Number.isFinite(descuento_porcentaje)||descuento_porcentaje<0||descuento_porcentaje>100||(precio_transferencia!==null&&(!Number.isFinite(precio_transferencia)||precio_transferencia<0))||!Number.isFinite(descuento_transferencia_porcentaje)||descuento_transferencia_porcentaje<0||descuento_transferencia_porcentaje>100){
   msg.textContent='Revisá el nombre, el precio y el stock.';
   return;
  }
 
  const product={
   nombre,precio,stock,
+  descuento_porcentaje,precio_transferencia,descuento_transferencia_porcentaje,
   imagen_url:document.getElementById('pImage').value.trim()||null,
   descripcion:document.getElementById('pDescription').value.trim(),
   activo:document.getElementById('pActive').checked
