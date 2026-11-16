@@ -108,8 +108,9 @@ h3{margin-top:0}
 <input id="pTransferDiscount" type="number" min="0" max="100" step="0.01" value="0" placeholder="Ej. 10">
 <label>Stock disponible</label>
 <input id="pStock" type="number" min="0" value="1">
-<label>Seleccionar foto de la galería</label>
-<input id="pImage" type="file" accept="image/*">
+<label>Seleccionar fotos de la galería</label>
+<input id="pImages" type="file" accept="image/*" multiple>
+<p class="muted">Podés elegir varias fotos del mismo modelo.</p>
 <label>Descripción</label>
 <textarea id="pDescription" rows="3" placeholder="Descripción de la gorra"></textarea>
 <label><input id="pActive" type="checkbox" checked style="width:auto"> Producto activo</label>
@@ -242,7 +243,7 @@ function editProduct(id){
 document.getElementById('pTransferPrice').value=p.precio_transferencia||'';
 document.getElementById('pTransferDiscount').value=p.descuento_transferencia_porcentaje||0;
  document.getElementById('pStock').value=p.stock||0;
- document.getElementById('pImage').value='';
+ document.getElementById('pImages').value='';
  document.getElementById('pDescription').value=p.descripcion||'';
  document.getElementById('pActive').checked=!!p.activo;
  document.getElementById('formMsg').textContent='';
@@ -267,24 +268,29 @@ if(!nombre||!Number.isFinite(precio)||precio<0||!Number.isInteger(stock)||stock<
   msg.textContent='Revisá el nombre, el precio y el stock.';
   return;
  }
-const archivo=document.getElementById('pImage').files[0];
-let imagen_url=null;
+const archivos=Array.from(document.getElementById('pImages').files);
+let imagenes=[];
 
-if(archivo){
-  const extension=archivo.name.split('.').pop();
-  const nombreArchivo=Date.now()+'-'+Math.random().toString(36).slice(2)+'.'+extension;
-  const {data,error}=await db.storage.from('productos').upload(nombreArchivo,archivo);
-  if(error){msg.textContent='Error al subir foto: '+error.message;return;}
-  const {data:urlData}=db.storage.from('productos').getPublicUrl(nombreArchivo);
-  imagen_url=urlData.publicUrl;
+if(archivos.length){
+  for(const archivo of archivos){
+    const extension=archivo.name.split('.').pop();
+    const nombreArchivo=Date.now()+'-'+Math.random().toString(36).slice(2)+'.'+extension;
+    const {data,error}=await db.storage.from('productos').upload(nombreArchivo,archivo);
+    if(error){msg.textContent='Error al subir foto: '+error.message;return;}
+    const {data:urlData}=db.storage.from('productos').getPublicUrl(nombreArchivo);
+    imagenes.push(urlData.publicUrl);
+  }
 }else if(editingId){
   const actual=products.find(p=>String(p.id)===String(editingId));
-  imagen_url=actual?.imagen_url||null;
+  imagenes=actual?.imagenes?.length?actual.imagenes:(actual?.imagen_url?[actual.imagen_url]:[]);
 }
+
+const imagen_url=imagenes[0]||null;
  const product={
   nombre,precio,stock,
   descuento_porcentaje,precio_transferencia,descuento_transferencia_porcentaje,
   imagen_url,
+  imagenes,
   descripcion:document.getElementById('pDescription').value.trim(),
   activo:document.getElementById('pActive').checked
  };
