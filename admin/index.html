@@ -108,8 +108,8 @@ h3{margin-top:0}
 <input id="pTransferDiscount" type="number" min="0" max="100" step="0.01" value="0" placeholder="Ej. 10">
 <label>Stock disponible</label>
 <input id="pStock" type="number" min="0" value="1">
-<label>Dirección de la fotografía (URL)</label>
-<input id="pImage" type="url" placeholder="https://...">
+<label>Seleccionar foto de la galería</label>
+<input id="pImage" type="file" accept="image/*">
 <label>Descripción</label>
 <textarea id="pDescription" rows="3" placeholder="Descripción de la gorra"></textarea>
 <label><input id="pActive" type="checkbox" checked style="width:auto"> Producto activo</label>
@@ -267,11 +267,24 @@ if(!nombre||!Number.isFinite(precio)||precio<0||!Number.isInteger(stock)||stock<
   msg.textContent='Revisá el nombre, el precio y el stock.';
   return;
  }
+const archivo=document.getElementById('pImage').files[0];
+let imagen_url=null;
 
+if(archivo){
+  const extension=archivo.name.split('.').pop();
+  const nombreArchivo=Date.now()+'-'+Math.random().toString(36).slice(2)+'.'+extension;
+  const {data,error}=await db.storage.from('productos').upload(nombreArchivo,archivo);
+  if(error){msg.textContent='Error al subir foto: '+error.message;return;}
+  const {data:urlData}=db.storage.from('productos').getPublicUrl(nombreArchivo);
+  imagen_url=urlData.publicUrl;
+}else if(editingId){
+  const actual=products.find(p=>String(p.id)===String(editingId));
+  imagen_url=actual?.imagen_url||null;
+}
  const product={
   nombre,precio,stock,
   descuento_porcentaje,precio_transferencia,descuento_transferencia_porcentaje,
-  imagen_url:document.getElementById('pImage').value.trim()||null,
+  imagen_url,
   descripcion:document.getElementById('pDescription').value.trim(),
   activo:document.getElementById('pActive').checked
  };
