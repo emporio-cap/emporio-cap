@@ -225,7 +225,7 @@ async function loadProducts(){
 function newProduct(){
  editingId=null;
  document.getElementById('formTitle').textContent='Nueva gorra';
- ['pName','pPrice','pImage','pDescription','pDiscount','pTransferPrice','pTransferDiscount'].forEach(id=>document.getElementById(id).value=''); 
+ ['pName','pPrice','pImages','pDescription','pDiscount','pTransferPrice','pTransferDiscount'].forEach(id=>document.getElementById(id).value=''); 
  document.getElementById('pStock').value=1;
  document.getElementById('pActive').checked=true;
  document.getElementById('formMsg').textContent='';
