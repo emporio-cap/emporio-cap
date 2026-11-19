@@ -15,6 +15,74 @@ footer img{width:190px;height:auto;max-width:75%;object-fit:contain;display:bloc
  .cart-panel .qty{color:#fff!important}
  .cart-panel .qty button,.cart-panel .qty input,.cart-panel .qty span{color:#fff!important;background:#111!important;border:1px solid #b89b69!important}
  .cart-panel .qty>*{background:#111!important;color:#fff!important;border:1px solid #b89b69!important}
+ .cart-panel .cart-line{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  flex-wrap:wrap;
+  width:100%;
+  box-sizing:border-box;
+}
+
+.cart-panel .cart-line>div{
+  min-width:0;
+  flex:1;
+}
+
+.cart-panel .qty{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  max-width:100%;
+}
+
+.cart-panel .qty button{
+  box-sizing:border-box;
+}
+
+.cart-panel .qty .remove{
+  margin-left:0;
+  white-space:nowrap;
+}
+
+.cart-panel .cart-line>b{
+  white-space:nowrap;
+}
+ @media (max-width: 480px){
+  .cart-panel .cart-line{
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .cart-panel .cart-line>div{
+    min-width: 0;
+    width: 100%;
+  }
+
+  .cart-panel .qty{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:8px;
+    width:100%;
+  }
+
+  .cart-panel .qty button{
+    min-width:38px;
+    height:38px;
+  }
+
+  .cart-panel .qty .remove{
+    margin-left:0;
+    white-space:normal;
+  }
+
+  .cart-panel .cart-line>b{
+    white-space:normal;
+  }
+ }
 </style></head>
 <body>
 <div class="announce">Envío sin cargo en Salta Capital · Envíos a todo el país</div>
