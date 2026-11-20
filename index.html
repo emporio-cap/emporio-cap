@@ -124,11 +124,34 @@ function renderCart(){
 }
 function openCart(){document.getElementById('cartShade').classList.add('open')}
 function closeCart(){document.getElementById('cartShade').classList.remove('open')}
-function sendOrder(){
- const items=Object.values(cart);if(!items.length){alert('Agregá al menos una gorra al carrito.');return}
- const lines=items.map(x=>x.name+' x '+x.qty+' — '+money(x.price*x.qty)),total=items.reduce((n,x)=>n+x.price*x.qty,0);
- const message='Hola, quiero consultar por este pedido de Emporio Cap:\n'+lines.join('\n')+'\nTotal: '+money(total);
- window.open('https://wa.me/?text='+encodeURIComponent(message),'_blank');
+async function sendOrder(){
+ const items=Object.values(cart);
+ if(!items.length){
+  alert('Agregá al menos una gorra al carrito.');
+  return;
+ }
+
+ const checkoutItems=items.map(x=>({
+  title:x.name,
+  quantity:x.qty,
+  unit_price:x.price,
+  currency_id:'ARS'
+ }));
+
+ const {data,error}=await db.functions.invoke('crear-preferencia',{
+  body:{items:checkoutItems}
+ });
+
+ if(error){
+  alert('No se pudo iniciar el pago. Intenta nuevamente.');
+  console.error(error);
+  return;
+ }
+
+ if(data?.init_point){
+  window.location.href=data.init_point;
+ }else{
+  alert('No se recibió el enlace de pago.');
+ }
 }
-renderCart();load();
 </script></body></html>
