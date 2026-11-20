@@ -98,8 +98,7 @@ const cart={};let catalog={};
 const money=n=>'$'+Math.round(n).toLocaleString('es-AR');
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function load(){
- const el=document.getElementById('products');
-  const {data,error}=await db.from('productos').select('id,nombre,precio,descuento_porcentaje,precio_transferencia,descuento_transferencia_porcentaje,stock,activo,descripcion,imagen_url,imagenes').eq('activo',true).order('created_at',{ascending:false});
+ const el=document.getElementById('products');const {data,error}=await db.from('productos').select('*').eq('activo',true);
  if(error){el.innerHTML='<div class="empty">No pudimos cargar la colección. Volvé a intentar más tarde.</div>';return}
  if(!data?.length){el.innerHTML='<div class="empty">Próximamente vas a encontrar acá nuestra colección de gorras.</div>';return}
  catalog={};
